@@ -18,7 +18,7 @@ COLOR = {BLACK: "Black", WHITE: "White", TIE: "Tie"}
 
 # 训练超参数
 MODEL_FILE = f"data/model-{WIDTH}x{HEIGHT}#{N_IN_ROW}.pdparams"
-LEARNING_RATE = 3e-4
+LEARNING_RATE = 1e-3
 MAX_EPISODE = 10000
 REWARD_GAMMA = 0.99
 BUFFER_LENGTH = 10000
