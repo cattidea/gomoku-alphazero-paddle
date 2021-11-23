@@ -122,6 +122,7 @@ class MCTSAlphaZeroPlayer(Player):
         self.mcts.update_with_move(-1)
 
     def __call__(self, board, is_selfplay=False, temp=1e-3):
+        self.model.eval()
         sensible_moves = board.availables
         move_probs = np.zeros(board.width * board.height)
         assert len(sensible_moves) > 0

@@ -6,6 +6,7 @@ from config import *
 
 
 class PolicyValueModelBase(nn.Layer):
+    @paddle.no_grad()
     def policy_value_fn(self, board):
         legal_positions = board.availables
         curr_state = np.expand_dims(board.state, axis=0)
