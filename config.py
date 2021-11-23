@@ -1,5 +1,3 @@
-import paddle
-
 # 棋盘属性
 WIDTH = 8
 HEIGHT = 8
@@ -19,7 +17,7 @@ NOTHING = 2
 COLOR = {BLACK: "Black", WHITE: "White", TIE: "Tie"}
 
 # 训练超参数
-MODEL_FILE = f"data/model-{WIDTH}x{HEIGHT}#{N_IN_ROW}.h5"
+MODEL_FILE = f"data/model-{WIDTH}x{HEIGHT}#{N_IN_ROW}.pdparams"
 LEARNING_RATE = 3e-4
 MAX_EPISODE = 10000
 REWARD_GAMMA = 0.99
@@ -28,6 +26,3 @@ ENTROPY_BETA = 0.01
 BATCH_SIZE = 512
 EPOCHS = 5
 CHECK_FREQ = 50
-
-# GPU Config
-# paddle.device.set_device("cuda:0")

@@ -66,7 +66,7 @@ class AlphaZeroMetric:
         for key in scores:
             score += key * scores[key]
         print(
-            "[Test] Episode: {:5d}, MCTS n_playout: {:6d}, Win: {:2d}, Lose: {:2d}, Tie: {:2d}, Score: {:.2f} ".format(
+            "[Test] Episode: {:5d}, MCTS n_playout: {:6d}, Win: {:2d}, Lose: {:2d}, Tie: {:2d}, Score: {:.2f}     ".format(
                 episode + 1, self.n_playout_mcts, scores[WIN], scores[LOSE], scores[TIE], score
             )
         )
@@ -77,6 +77,25 @@ class AlphaZeroMetric:
                 self.n_playout_mcts += 500
             return True
         return False
+
+
+class MeanRecorder:
+    """用于记录平均值的 Recorder"""
+
+    def __init__(self):
+        self.value = paddle.to_tensor(0.0, dtype=paddle.float32)
+        self.count = 0
+
+    def __call__(self, value):
+        self.value += value
+        self.count += 1
+
+    def result(self):
+        (self.value / self.count).item()
+
+    def reset(self):
+        self.value *= 0
+        self.count *= 0
 
 
 class Worker:
@@ -95,12 +114,11 @@ class Worker:
         self.game = Game(self.player, self.player, HeadlessUI())
         self.data_aug = DataAugmentor(rotate=True, flip=True)
         self.metric = AlphaZeroMetric(n_playout=400)
+        self.loss_recorder = MeanRecorder()
 
     def run(self):
         for episode in range(MAX_EPISODE):
             winner = self.game.play(is_selfplay=True)
-
-            loss_recorder = paddle.to_tensor(0.0, dtype=paddle.float32)
 
             for epoch in range(EPOCHS):
                 mini_batch = random.sample(self.game.data_buffer, min(BATCH_SIZE, len(self.game.data_buffer) // 2))
@@ -110,6 +128,7 @@ class Worker:
                 mcts_probs_batch = paddle.to_tensor(mcts_probs_batch, dtype=paddle.float32)
                 rewards_batch = paddle.to_tensor(rewards_batch, dtype=paddle.float32).unsqueeze(-1)
 
+                self.model.train()
                 policy, values = self.model(states_batch)
                 loss = self.loss_object(
                     mcts_probs=mcts_probs_batch,
@@ -122,7 +141,7 @@ class Worker:
                 self.opt.step()
                 self.opt.clear_grad()
 
-                loss_recorder += loss
+                self.loss_recorder(loss)
 
                 print(
                     "[Training] Episode: {:5d}, Epoch: {:2d}, Winner: {:5s}, Loss: {}  ".format(
@@ -132,7 +151,13 @@ class Worker:
                 )
 
             if (episode + 1) % CHECK_FREQ == 0:
-                print("[Train] Episode: {:5d}, Loss: {}  ".format(episode + 1, loss_recorder.numpy()))
+                self.model.eval()
+                print(
+                    "[Train] Episode: {:5d}, Loss: {}                               ".format(
+                        episode + 1, self.loss_recorder.result()
+                    )
+                )
+                self.loss_recorder.reset()
                 is_best_score = self.metric(self.model.state_dict(), episode)
                 if is_best_score:
                     paddle.save(self.model.state_dict(), MODEL_FILE)
